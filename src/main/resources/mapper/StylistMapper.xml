@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="StylishMapper">
+
+    <insert id="insertBrand" parameterType="musinsa.model.Brand" useGeneratedKeys="true">
+        INSERT INTO brand (name)
+        VALUES (#{name})
+    </insert>
+
+    <insert id="insertBrandCategory" parameterType="map">
+        INSERT INTO brand_category (brand_id, category, price)
+        VALUES (#{brandId}, #{category}, #{price})
+    </insert>
+
+    <select id="getResultByCategory" parameterType="string" resultType="map">
+        SELECT b.name AS brand, bc.price AS price
+        FROM brand b
+        JOIN brand_category bc ON b.id = bc.brand_id
+        WHERE bc.category = #{category}
+        ORDER BY bc.price
+        LIMIT 1
+    </select>
+
+    <select id="getAllBrands" resultType="musinsa.model.Brand">
+        SELECT * FROM brand
+    </select>
+
+    <select id="getResultByCategory" parameterType="string" resultType="map">
+        SELECT b.name AS brand, bc.price AS price
+        FROM brand b
+        JOIN brand_category bc ON b.id = bc.brand_id
+        WHERE bc.category = #{category}
+        ORDER BY bc.price
+    </select>
+
+    <delete id="deleteAll">
+        DELETE FROM brand_category;
+        DELETE FROM brand;
+    </delete>
+</mapper>
