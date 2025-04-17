@@ -3,34 +3,38 @@
 <mapper namespace="StylishMapper">
 
     <insert id="insertBrand" parameterType="musinsa.model.Brand" useGeneratedKeys="true">
-        INSERT INTO brand (name)
+        INSERT
+          INTO brand
+               (name)
         VALUES (#{name})
     </insert>
 
     <insert id="insertBrandCategory" parameterType="map">
-        INSERT INTO brand_category (brand_id, category, price)
+        INSERT
+          INTO brand_category
+               (brand_id, category, price)
         VALUES (#{brandId}, #{category}, #{price})
     </insert>
 
     <select id="getResultByCategory" parameterType="string" resultType="map">
-        SELECT b.name AS brand, bc.price AS price
+        SELECT b.name   AS brand
+             , bc.price AS price
         FROM brand b
         JOIN brand_category bc ON b.id = bc.brand_id
         WHERE bc.category = #{category}
         ORDER BY bc.price
-        LIMIT 1
+    </select>
+
+    <select id="findBrandByName" parameterType="string" resultType="Integer">
+        SELECT count(1)
+          FROM brand
+         WHERE name = #{name}
     </select>
 
     <select id="getAllBrands" resultType="musinsa.model.Brand">
-        SELECT * FROM brand
-    </select>
-
-    <select id="getResultByCategory" parameterType="string" resultType="map">
-        SELECT b.name AS brand, bc.price AS price
-        FROM brand b
-        JOIN brand_category bc ON b.id = bc.brand_id
-        WHERE bc.category = #{category}
-        ORDER BY bc.price
+        SELECT id,
+               name
+          FROM brand
     </select>
 
     <delete id="deleteAll">

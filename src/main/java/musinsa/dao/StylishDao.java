@@ -6,6 +6,7 @@ import musinsa.model.Category;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,13 +20,15 @@ public class StylishDao {
     public void insertBrand(Brand brand) {
         sqlSession.insert("StylishDao.insertBrand", brand);
 
-        for(Category category : brand.getCategories()) {
+        // todo 여기 구현하는 게 어려운듯
+        for(String key : brand.getCategories().keySet()) {
             Map<String, Object> params = new HashMap<>();
             params.put("brandId", brand.getId());
-            params.put("category", category.getName());
-            params.put("price", category.getPrice());
+            params.put("category", key);
+            params.put("price", brand.getCategories().get(key));
 
-            sqlSession.insert("StylishDao.insertCategory", params);
+            // todo 밑에 함수랑 중복되어 수정 필요
+            sqlSession.insert("StylishDao.insertBrandCategory", params);
         }
     }
 
@@ -40,11 +43,20 @@ public class StylishDao {
         return sqlSession.selectList("StylishDao.getResultByCategory", category);
     }
 
+    public int findBrandByName(String name) {
+        return sqlSession.selectOne("StylishDao.findBrandByName", name);
+    }
+
     public List<Brand> getAllBrands() {
         return sqlSession.selectList("StylishDao.getAllBrands");
     }
 
-    public void deleteAll() {
-        sqlSession.delete("StylishDao.deleteAll");
+    public void deleteBrand(Brand brand) {
+        sqlSession.delete("StylishDao.deleteBrand");
+        sqlSession.delete("StylishDao.deleteBrandCategory");
     }
+
+//    public void deleteAll() {
+//        sqlSession.delete("StylishDao.deleteAll");
+//    }
 }

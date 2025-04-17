@@ -3,6 +3,7 @@ package musinsa.stylist;
 import lombok.RequiredArgsConstructor;
 import musinsa.model.Brand;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,14 +35,21 @@ public class StylistController {
         return stylistService.getResultByCategory(categoryName);
     }
 
-    // 브랜드 및 상품을 추가 / 업데이트 / 삭제
+    // 브랜드 및 상품을 추가 / 업데이트
     @PostMapping
-    public void modifyBrands(@RequestBody List<Brand> brands) {
-        stylistService.modifyBrands(brands);
+    public ResponseEntity<String> modifyBrands(@RequestBody List<Brand> brands) {
+        stylistService.modifyBrands("수정", brands);
+        return ResponseEntity.ok("브랜드 및 카테고리 정보가 업데이트되었습니다.");
     }
 
     @DeleteMapping
-    public void deleteAll() {
-        stylistService.clearAll();
+    public ResponseEntity<String> deleteBrands(@RequestBody List<Brand> brands) {
+        stylistService.modifyBrands("삭제", brands);
+        return ResponseEntity.ok("브랜드 및 카테고리 정보가 삭제되었습니다.");
     }
+
+//    @DeleteMapping
+//    public void deleteAll() {
+//        stylistService.clearAll();
+//    }
 }

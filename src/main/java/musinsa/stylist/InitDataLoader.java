@@ -37,11 +37,11 @@ public class InitDataLoader {
 
             // 브랜드 명을 A~I 알파벳 순서대로 적재
             String name = String.valueOf((char) ('A' + i));
-            List<Category> categories = new ArrayList<>();
+            Map<String, Integer> categories = new HashMap<>();
 
             // 카테고리별 금액을 순서대로 적재
             for (int j = 0; j < CATEGORIES.size(); j++) {
-                categories.add(new Category(CATEGORIES.get(j), prices[i][j]));
+                categories.put(CATEGORIES.get(j), prices[i][j]);
             }
 
             Brand brand = new Brand();
