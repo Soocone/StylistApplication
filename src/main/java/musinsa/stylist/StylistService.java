@@ -4,12 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import musinsa.dao.StylishDao;
 import musinsa.model.Brand;
+import musinsa.model.Brand_Category;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-@Service @Slf4j @Transactional
+@Service @Slf4j
+@Transactional(rollbackFor = Exception.class)
 @RequiredArgsConstructor
 public class StylistService {
 
@@ -17,81 +20,6 @@ public class StylistService {
     List<String>  categories = InitDataLoader.CATEGORIES;
 
     String msg = "";
-
-    /**
-     *  서비스명: modifyBrands
-     *  설명: 브랜드 등록/수정/삭제
-     *  param: List<Brand>
-     *  return: 결과 메시지
-     */
-    public String modifyBrands(String flag, List<Brand> brands) {
-        log.info("업데이트/삭제 브랜드 목록: {}", brands);
-
-        int cnt = 0;
-        switch (flag) {
-            case "수정" :
-                // 브랜드 1건씩 등록/수정 수행
-                for (Brand brand : brands) {
-                    cnt = modifyBrand(brand) ? cnt++ : 0;
-                }
-                break;
-
-            case "삭제" :
-                // 브랜드 1건씩 삭제 수행
-                for (Brand brand : brands) {
-                    cnt = deleteBrand(brand) ? cnt++ : 0;
-                }
-                break;
-        }
-
-        return "브랜드 " + cnt + " 건 "+ flag + "완료되었습니다.";
-    }
-
-    /**
-     *  서비스명: modifyBrand
-     *  설명: 단건 브랜드 등록/수정
-     *       브랜드 및 상품을 추가 / 업데이트 - merge를 사용하려다가 중복데이터가 있는 경우 사용자에게 알려주고 전체롤백 시키기 위해
-     *       기존 데이터 delete 후 insert하기보다, insert / update로 구현
-     *  param: Brand
-     *  return: 수행 결과(boolean)
-     */
-    public boolean modifyBrand(Brand brand) {
-        log.info("업데이트 브랜드: {}", brand);
-
-        // 중복 브랜드 조회
-        int existing = stylishDao.findBrandByName(brand.getName());
-
-        // 중복 브랜드 존재 시
-        if (existing > 0) {
-            msg = brand.getName() + " 브랜드는 이미 존재합니다.";
-            return false;
-        } else {
-            // 브랜드 등록
-            stylishDao.insertBrand(brand);
-
-            // 브랜드 카테고리 등록
-            for (Map.Entry<String, Integer> entry : brand.getCategories().entrySet()) {
-                log.debug("업데이트 브랜드 카테고리 {} - 가격 {}", entry.getKey(), entry.getValue());
-                stylishDao.insertBrandCategory(brand.getId(), entry.getKey(), entry.getValue());
-            }
-        }
-
-        return true;
-    }
-
-
-    /**
-     *  서비스명: deleteBrand
-     *  설명: 단건 브랜드 삭제
-     *  param: Brand
-     *  return:
-     */
-    public Boolean deleteBrand(Brand brand) {
-        log.info("삭제 브랜드: {}", brand);
-
-        stylishDao.deleteBrand(brand);
-        return true;
-    }
 
     /**
      *  서비스명: getResultByCategory
@@ -136,18 +64,38 @@ public class StylistService {
         int minTotal = Integer.MAX_VALUE;
 
         for (Brand b : brands) {
-            Map<String, Integer> category = b.getCategories();
-            if (category.keySet().containsAll(categories)) {
-                int total = categories.stream().mapToInt(p -> category.getOrDefault(p, Integer.MAX_VALUE)).sum();
-                if (total < minTotal) {
-                    minTotal = total;
-                    best = new LinkedHashMap<>();
-                    best.put("brand", b.getName());
-                    best.put("category", category);
-                    best.put("total", total);
+//            Map<String, Integer> category = b.getCategories();
+//            if (category.keySet().containsAll(categories)) {
+//                int total = categories.stream().mapToInt(p -> category.getOrDefault(p, Integer.MAX_VALUE)).sum();
+//                if (total < minTotal) {
+//                    minTotal = total;
+//                    best = new LinkedHashMap<>();
+//                    best.put("brand", b.getName());
+//                    best.put("category", category);
+//                    best.put("total", total);
+//
+//                    log.debug("최저가격에 판매하는 단일 브랜드: {}, 총액: {}", b.getName(), total);
+//                }
+//            }
 
-                    log.debug("최저가격에 판매하는 단일 브랜드: {}, 총액: {}", b.getName(), total);
-                }
+            List<Brand_Category> categoryList = b.getCategories();
+
+            // List -> Map<String, Integer> 형태로 변환해서 사용
+            Map<String, Integer> categoryMap = categoryList.stream()
+                    .collect(Collectors.toMap(Brand_Category::getName, Brand_Category::getPrice));
+
+            int total = categories.stream()
+                    .mapToInt(cat -> categoryMap.getOrDefault(cat, Integer.MAX_VALUE))
+                    .sum();
+
+            if (total < minTotal) {
+                minTotal = total;
+                best = new LinkedHashMap<>(); // 순서를 일정하게 유지하기 위해 사용
+                best.put("brand", b.getName());
+                best.put("category", categoryList); // categoryList 자체를 넣음
+                best.put("total", total);
+
+                log.debug("최저가격에 판매하는 단일 브랜드: {}, 총액: {}", b.getName(), total);
             }
         }
         return best;
@@ -175,11 +123,98 @@ public class StylistService {
     /**
      *  서비스명: getAll
      *  설명: 브랜드 전체 조회
-     *  param:
      *  return: 조회 결과
      */
     public List<Brand> getAll() {
         return stylishDao.getAllBrands();
+    }
+
+    /**
+     *  서비스명: inqAllInfo
+     *  설명: 브랜드, 상품 전체 조회
+     *  return: 조회 결과
+     */
+    public List<Map<String, Object>> inqAllInfo() {
+        log.info("전체 브랜드, 상품 조회 시작");
+        return stylishDao.getAllInfo();
+    }
+
+    /**
+     *  서비스명: modifyBrands
+     *  설명: 브랜드 등록/수정/삭제
+     *  param: List<Brand>
+     *  return: 결과 메시지
+     */
+//    public String modifyBrands(String flag, List<Brand> brands) {
+//        log.info("업데이트/삭제 브랜드 목록: {}", brands);
+//
+//        int cnt = 0;
+//        switch (flag) {
+//            case "수정" :
+//                // 브랜드 단건 등록/수정 수행
+//                for (Brand brand : brands) {
+//                    cnt = modifyBrand(brand) ? cnt++ : 0;
+//                }
+//                break;
+//
+//            case "삭제" :
+//                // 삭제 수행
+//                cnt = deleteBrand(brands) ? cnt++ : 0;
+//                break;
+//        }
+//
+//        return "브랜드 " + cnt + " 건 "+ flag + "완료되었습니다.";
+//    }
+
+    /**
+     *  서비스명: modifyBrand
+     *  설명: 단건 브랜드 등록/수정
+     *       브랜드 및 상품을 추가 / 업데이트 - merge를 사용하려다가 중복데이터가 있는 경우 사용자에게 알려주고 전체롤백 시키기 위해
+     *       기존 데이터 delete 후 insert하기보다, insert / update로 구현
+     *  param: Brand
+     *  return: 수행 결과(boolean)
+     */
+    public boolean modifyBrand(Brand brand) {
+        log.info("업데이트 브랜드: {}", brand);
+
+        // 중복 브랜드 조회
+        int existing = stylishDao.findBrandByName(brand.getName());
+
+        // 중복 브랜드 존재 시
+        if (existing > 0) {
+            msg = brand.getName() + " 브랜드는 이미 존재합니다.";
+            return false;
+        } else {
+            // 브랜드 및 상품 등록
+            stylishDao.insertBrand(brand);
+
+            for(Brand_Category category : brand.getCategories()) {
+                category.setBrandId(brand.getId());
+            }
+            stylishDao.insertBrandCategory(brand.getCategories());
+
+//            // 브랜드 카테고리 등록
+//            for (Map.Entry<String, Integer> entry : brand.getCategories().entrySet()) {
+//                log.debug("업데이트 브랜드 카테고리 {} - 가격 {}", entry.getKey(), entry.getValue());
+//                stylishDao.insertBrandCategory(brand.getId(), entry.getKey(), entry.getValue());
+//            }
+        }
+
+        return true;
+    }
+
+
+    /**
+     * 서비스명: deleteBrand
+     * 설명: 브랜드 다건 삭제
+     * param: Brand
+     * return:
+     */
+    public void deleteBrand(List<Brand> brands) {
+        log.info("삭제 브랜드: {}", brands);
+
+        // 브랜드, 브랜드 카테고리 삭제
+        stylishDao.deleteBrand(brands);
     }
 
 

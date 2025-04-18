@@ -1,0 +1,14 @@
+package musinsa.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Brand_Category {
+    private Long brandId; // pk
+    private String name;
+    private int price;
+}

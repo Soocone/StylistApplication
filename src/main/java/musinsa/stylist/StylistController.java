@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/category")
+@RequestMapping("/stylist")
 public class StylistController {
 
     @Autowired
@@ -31,20 +31,27 @@ public class StylistController {
 
     // 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격을 조회
     @GetMapping("/bestResultBy/{categoryName}")
-    public Map<String, Object> getResultByCategory(@RequestParam String categoryName) {
+    public Map<String, Object> getResultByCategory(@RequestBody String categoryName) {
         return stylistService.getResultByCategory(categoryName);
     }
 
-    // 브랜드 및 상품을 추가 / 업데이트
+    // 전체 브랜드, 상품 조회
+    @GetMapping("/allInfo")
+    public List<Map<String, Object>> getAllInfo() {
+        return stylistService.inqAllInfo();
+    }
+
+    // 브랜드 및 상품을 업데이트
     @PostMapping
-    public ResponseEntity<String> modifyBrands(@RequestBody List<Brand> brands) {
-        stylistService.modifyBrands("수정", brands);
+    public ResponseEntity<String> modifyBrand(@RequestBody Brand brand) {
+        stylistService.modifyBrand(brand);
         return ResponseEntity.ok("브랜드 및 카테고리 정보가 업데이트되었습니다.");
     }
 
-    @DeleteMapping
+    // 브랜드 및 상품 삭제
+    @PostMapping
     public ResponseEntity<String> deleteBrands(@RequestBody List<Brand> brands) {
-        stylistService.modifyBrands("삭제", brands);
+        stylistService.deleteBrand(brands);
         return ResponseEntity.ok("브랜드 및 카테고리 정보가 삭제되었습니다.");
     }
 
