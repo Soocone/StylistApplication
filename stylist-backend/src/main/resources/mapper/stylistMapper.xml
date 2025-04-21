@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="musinsa.mapper.StylistDao">
+    
+    <update id="createBrandTable">
+        CREATE TABLE
+        IF NOT EXISTS
+        BRAND (
+                brand_id INT          AUTO_INCREMENT PRIMARY KEY,
+                name     VARCHAR(30)  NOT NULL)
+    </update>
+
+    <update id="createBrandCategoryTable">
+        CREATE TABLE
+        IF NOT EXISTS
+        BRAND_CATEGORY (
+                brand_id INT         NOT NULL,
+                category VARCHAR(50) NOT NULL,
+                price    INT         NOT NULL)
+    </update>
+
+    <update id="createCategoryTable">
+        CREATE TABLE
+        IF NOT EXISTS
+        CATEGORY (
+                category_id INT         AUTO_INCREMENT PRIMARY KEY,
+                name        VARCHAR(50) NOT NULL)
+    </update>
+
+    <insert id="insertBrand" parameterType="musinsa.dto.BrandDto" useGeneratedKeys="true" keyProperty="brandId">
+        INSERT
+          INTO BRAND
+               (name)
+        VALUES (#{name})
+    </insert>
+
+    <insert id="insertBrandCategories" parameterType="java.util.List">
+        INSERT
+          INTO BRAND_CATEGORY
+               (brand_id, category, price)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+              (#{item.brandId}, #{item.category}, #{item.price})
+        </foreach>
+    </insert>
+
+    <insert id="insertCategories" parameterType="musinsa.dto.CategoryDto">
+        INSERT
+          INTO CATEGORY
+               (category_id, name)
+        VALUES (#{categoryId}, #{name})
+    </insert>
+
+    <update id="updateBrand" parameterType="musinsa.dto.BrandDto">
+        UPDATE BRAND
+           SET name     = #{name}
+         WHERE brand_id = #{brandId}
+    </update>
+
+    <update id="updateBrandCategories" parameterType="musinsa.dto.BrandDto">
+        UPDATE BRAND_CATEGORY
+           SET price    = #{price}
+         WHERE brand_id = #{brandId}
+           AND category = #{category}
+    </update>
+
+    <select id="getResultByCategory" parameterType="string" resultType="map">
+        SELECT b.name      AS brand
+             , bc.price    AS price
+             , bc.category AS category
+          FROM BRAND b
+          JOIN BRAND_CATEGORY bc ON b.brand_id = bc.brand_id
+         WHERE 1=1
+<!--        <if test="categoryName != null AND categoryName != ''">-->
+           AND bc.category LIKE CONCAT('%', #{categoryName}, '%')
+<!--        </if>-->
+         ORDER BY bc.price
+    </select>
+
+    <select id="findBrandByName" parameterType="string" resultType="Integer">
+        SELECT count(1)
+          FROM BRAND
+         WHERE name = #{name}
+    </select>
+
+    <select id="getDashboard" resultType="map">
+        SELECT
+                b.brand_id                                        AS brand_id
+              , b.name                                            AS brand_name
+              , MAX(CASE WHEN c.name = '상의' THEN bc.price END)   AS 상의
+              , MAX(CASE WHEN c.name = '아우터' THEN bc.price END)  AS 아우터
+              , MAX(CASE WHEN c.name = '바지' THEN bc.price END)    AS 바지
+              , MAX(CASE WHEN c.name = '스니커즈' THEN bc.price END) AS 스니커즈
+              , MAX(CASE WHEN c.name = '가방' THEN bc.price END)    AS 가방
+              , MAX(CASE WHEN c.name = '모자' THEN bc.price END)    AS 모자
+              , MAX(CASE WHEN c.name = '양말' THEN bc.price END)    AS 양말
+              , MAX(CASE WHEN c.name = '액세서리' THEN bc.price END) AS 액세서리
+        FROM BRAND b
+        LEFT JOIN BRAND_CATEGORY bc ON b.brand_id = bc.brand_id
+        LEFT JOIN CATEGORY c ON bc.category = c.name
+        GROUP BY b.name
+        ORDER BY b.brand_id
+    </select>
+
+    <select id="getAllBrands" resultType="map">
+        SELECT brand_id
+             , name
+          FROM BRAND
+         ORDER BY name
+    </select>
+
+    <select id="getAllInfo" resultType="map">
+        SELECT b.brand_id  AS brand_id
+             , b.name      AS brand_name
+             , bc.category AS category
+             , bc.price    AS price
+        FROM BRAND b
+        JOIN BRAND_CATEGORY bc ON b.brand_id = bc.brand_id
+        ORDER BY b.brand_id
+    </select>
+
+    <!-- 브랜드의 카테고리별 가격 조회 -->
+    <select id="getBrandCategoryPrices" parameterType="long" resultType="map">
+        SELECT category
+             , price
+          FROM BRAND_CATEGORY
+         WHERE brand_id = #{brandId}
+    </select>
+
+    <!-- 전체 브랜드의 카테고리별 평균 가격 -->
+    <select id="getAverageCategoryPrices" resultType="map">
+        SELECT category
+             , ROUND(AVG(price), 2) AS price
+         FROM BRAND_CATEGORY
+        GROUP BY category
+    </select>
+
+    <!-- 브랜드 이름 조회 -->
+    <select id="getBrandNameById" parameterType="long" resultType="string">
+        SELECT name
+          FROM brand
+         WHERE brand_id = #{brandId}
+    </select>
+
+    <!-- 카테고리별 가격 조회-->
+    <select id="getBrandsByCategory" parameterType="String" resultType="map">
+        SELECT
+               b.name   AS brandName,
+               bc.price AS price
+         FROM BRAND b
+         JOIN BRAND_CATEGORY bc ON b.brand_id = bc.brand_id
+         JOIN CATEGORY c ON bc.category = c.name
+        WHERE c.name = #{categoryName}
+    </select>
+
+    <!-- 각 브랜드별 평균금액이 가장 높은 행 추출 -->
+    <select id="getTopCategoryByBrand" resultType="map">
+        SELECT t.brand_id, t.brand_name, t.category_name, t.avg_price
+          FROM (
+                 SELECT bc.brand_id
+                      , b.name          AS brand_name
+                      , c.category_id   AS category_id
+                      , c.name          AS category_name
+                      , AVG(bc.price)   AS avg_price
+                      , RANK() OVER (PARTITION BY bc.brand_id
+                                         ORDER BY AVG(bc.price) DESC) AS rk
+                   FROM brand_category bc
+                   JOIN brand b ON bc.brand_id = b.brand_id
+                   JOIN category c ON bc.category = c.name
+                  GROUP BY bc.brand_id, bc.category
+                ) t
+        WHERE t.rk = 1
+    </select>
+
+    <delete id="deleteBrandById" parameterType="java.util.List">
+        DELETE
+          FROM BRAND
+         WHERE brand_id IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+               #{item}
+        </foreach>
+    </delete>
+
+    <delete id="deleteBrandCategories" parameterType="java.util.List">
+        DELETE
+          FROM BRAND_CATEGORY
+         WHERE brand_id IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+               #{item}
+        </foreach>
+    </delete>
+
+    <delete id="deleteAll">
+        DELETE FROM BRAND_CATEGORY;
+        DELETE FROM BRAND;
+        DELETE FROM CATEGORY;
+    </delete>
+
+    <update id="dropTable" parameterType="java.lang.String">
+        DROP TABLE IF EXISTS ${tableName}
+    </update>
+</mapper>
