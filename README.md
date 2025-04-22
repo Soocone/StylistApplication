@@ -38,7 +38,7 @@
 ---
 
 ## 📁 ERD 구성
-
+<img width="554" alt="Image" src="https://github.com/user-attachments/assets/3470b823-72e4-491b-86d4-bbc94afabfca" />
 
 **(1) 브랜드 (BRAND)**
 - 브랜드를 관리하는 독립 테이블
@@ -72,7 +72,7 @@
 
 ## 📂 프로젝트 구조
 
-\`\`\`
+```
 StylistApplication
 ├── backend
 │   ├── controller
@@ -84,7 +84,7 @@ StylistApplication
 │   ├── pages
 │   ├── api
 │   └── types
-\`\`\`
+```
 
 ---
 
@@ -92,18 +92,18 @@ StylistApplication
 
 ### 1. 프로젝트 클론
 
-\`\`\`bash
+````bash
 git clone https://github.com/Soocone/StylistApplication.git
 cd StylistApplication
-\`\`\`
+```
 
 ### 2. 백엔드 실행
 
-\`\`\`bash
+```bash
 cd backend
 ./gradlew build
 ./gradlew bootRun
-\`\`\`
+```
 
 - 백엔드 기본 포트: `http://localhost:8080`
 
@@ -116,21 +116,21 @@ cd backend
 
 ### 3. 프론트엔드 실행
 
-\`\`\`bash
+```bash
 cd frontend
 npm install
 npm start
-\`\`\`
+```
 
 - 프론트 기본 포트: `http://localhost:3000`
 - API 요청은 proxy 설정을 통해 `localhost:8080`으로 전달됨
 
 ### 4. 테스트 실행
 
-\`\`\`bash
+```bash
 cd backend
 ./gradlew test
-\`\`\`
+```
 
 ---
 
@@ -150,7 +150,7 @@ cd backend
 - `BigDecimal`을 사용해 정확성 보장
 
 (예시 코드)
-\`\`\`java
+```java
 // 평균과의 가격 비교 차이 담기 - ((브랜드가격 - 평균가격) / 평균가격) * 100
 Map<String, Object> comparisonInfo = new LinkedHashMap<>();
 
@@ -167,7 +167,7 @@ BigDecimal diff = brandPrice.subtract(avgPrice)
 
 String formatted = diff.setScale(1, RoundingMode.HALF_UP).toString() + "%";
 comparisonInfo.put("diffPercent", formatted);
-\`\`\`
+```
 
 ---
 
@@ -176,7 +176,7 @@ comparisonInfo.put("diffPercent", formatted);
 - 가능한 조인을 모두 사용하고 상대적으로 복잡한 쿼리 작성을 통해 브랜드별 고가 카테고리 분석
 - `PARTITION BY` + `RANK()`를 활용한 랭킹 기반 도출
 
-\`\`\`sql
+```sql
 SELECT t.brand_id, t.brand_name, t.category_name, t.avg_price
 FROM (
   SELECT bc.brand_id,
@@ -191,7 +191,7 @@ FROM (
    GROUP BY bc.brand_id, bc.category
 ) t
 WHERE t.rk = 1;
-\`\`\`
+```
 
 > ⚠️ 초기 데이터로만 보면 무조건 "상의" 카테고리가 가장 비싸지만, 브랜드 가격 조정(수정 기능) 후 유의미한 결과 확인 가능
 
