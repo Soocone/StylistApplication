@@ -101,7 +101,7 @@ cd StylistApplication
 
 ```bash
 cd backend
-./gradlew build
+./gradlew build -x test
 ./gradlew bootRun
 ```
 
