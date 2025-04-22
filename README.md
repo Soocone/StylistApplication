@@ -92,7 +92,7 @@ StylistApplication
 
 ### 1. 프로젝트 클론
 
-````bash
+```bash
 git clone https://github.com/Soocone/StylistApplication.git
 cd StylistApplication
 ```
