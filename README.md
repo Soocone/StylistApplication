@@ -105,25 +105,60 @@ cd backend
 ./gradlew bootRun
 ```
 
-- 백엔드 기본 포트: `http://localhost:8080`
+- 백엔드 기본 포트: `http://localhost:8088`
 
-**H2 콘솔 접속**
+**(참고)H2 콘솔 접속정보**
 - URL: `http://localhost:8080/h2-console`
 - JDBC: `jdbc:h2:tcp://localhost/~/stylist`
 - driver-class-name: `org.h2.Driver`
 - User: `sa`
 - Password: _(비워둠)_
 
-### 3. 프론트엔드 실행
+### 3-1. 프론트엔드 실행
 
 ```bash
 cd frontend
 npm install
+```
+
+ ---
+ 🙋‍♀️ Windows에서 npm install 시 NODE_OPTIONS 에러 해결 방법 (React + create-react-app)
+ - Windows에서는 `NODE_OPTIONS=...` 형식이 직접 실행되지 않기 때문에 cross-env를 사용해 우회해야 합니다.
+ 
+ 
+### 🔧 1단계: 기존 package.json 확인
+- `stylist-frontend/package.json` 파일을 열고, `start` 스크립트가 다음과 같이 되어 있는지 확인해 주세요.
+```json
+"scripts": {
+  "start": "NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
+  ...
+}
+```
+ 
+ ### 🔁 2단계: cross-env 설치
+- 터미널에서 다음 명령어를 입력하세요.
+ 
+```bash
+npm install cross-env --save-dev
+```
+
+ ### ✏️ 3단계: package.json 수정
+- 설치가 끝났다면, `start` 스크립트를 다음과 같이 수정합니다:
+```json
+"scripts": {
+  "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
+  ...
+}
+```
+ ---
+
+### 3-2. 프론트엔드 실행
+```bash
 npm start
 ```
 
 - 프론트 기본 포트: `http://localhost:3000`
-- API 요청은 proxy 설정을 통해 `localhost:8080`으로 전달됨
+- API 요청은 proxy 설정을 통해 `localhost:8088`으로 전달됨
 
 ### 4. 테스트 실행
 
